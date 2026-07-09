@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+
+    container_name: opinio-postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: opinio
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile.dev
+
+    container_name: opinio-backend
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+
+    depends_on:
+      - postgres
+
+    env_file:
+      - ./apps/backend/.env
+
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+
+volumes:
+  postgres_data:
