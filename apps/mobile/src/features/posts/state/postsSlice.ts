@@ -90,11 +90,15 @@ const postsSlice = createSlice({
       .addCase(fetchFeed.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isRefreshing = false;
-        const { posts, isRefresh } = action.payload;
+        const { posts, isRefresh, likedPosts, votedOptions } = action.payload;
         if (isRefresh) {
           state.feed = posts;
+          state.likedPosts = likedPosts;
+          state.votedOptions = votedOptions;
         } else {
           state.feed = [...state.feed, ...posts];
+          state.likedPosts = { ...state.likedPosts, ...likedPosts };
+          state.votedOptions = { ...state.votedOptions, ...votedOptions };
         }
         state.hasMore = posts.length === 20;
       })
@@ -155,6 +159,7 @@ const postsSlice = createSlice({
 
       .addCase(deletePost.fulfilled, (state, action) => {
         state.feed = state.feed.filter(p => p.id !== action.payload);
+        state.userPosts = state.userPosts.filter(p => p.id !== action.payload);
         if (state.currentPost?.id === action.payload) {
           state.currentPost = null;
         }

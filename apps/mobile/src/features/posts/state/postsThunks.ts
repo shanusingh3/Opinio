@@ -3,13 +3,37 @@ import { postsRepository } from '../repository/postsRepository';
 import { Post, CreatePostRequest, UpdatePostRequest } from '../api/postsApi';
 
 export const fetchFeed = createAsyncThunk<
-  { posts: Post[]; isRefresh: boolean },
+  { posts: Post[]; isRefresh: boolean; likedPosts: Record<string, boolean>; votedOptions: Record<string, string | null> },
   { skip?: number; take?: number; isRefresh?: boolean },
   { rejectValue: string }
 >('posts/fetchFeed', async ({ skip = 0, take = 20, isRefresh = false }, { rejectWithValue }) => {
   try {
     const posts = await postsRepository.getFeed(skip, take);
-    return { posts, isRefresh };
+    
+    // Fetch like and vote status for each post in parallel
+    const likeChecks = posts.map(post => 
+      postsRepository.checkLiked(post.id).catch(() => false)
+    );
+    const voteChecks = posts.map(post => 
+      post.poll ? postsRepository.checkVoted(post.id).catch(() => null) : Promise.resolve(null)
+    );
+    
+    const [likeResults, voteResults] = await Promise.all([
+      Promise.all(likeChecks),
+      Promise.all(voteChecks),
+    ]);
+    
+    const likedPosts: Record<string, boolean> = {};
+    const votedOptions: Record<string, string | null> = {};
+    
+    posts.forEach((post, index) => {
+      likedPosts[post.id] = likeResults[index];
+      if (post.poll) {
+        votedOptions[post.id] = voteResults[index];
+      }
+    });
+    
+    return { posts, isRefresh, likedPosts, votedOptions };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch feed';
     return rejectWithValue(message);

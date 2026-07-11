@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +17,7 @@ import { useAuth } from '@/features/auth/context/AuthContext';
 import { useAppDispatch, useAppSelector } from '@/store';
 import {
   fetchUserPosts,
+  deletePost,
   selectUserPosts,
   selectPostsLoading,
   selectLikedPosts,
@@ -114,6 +116,26 @@ export const MyPostsScreen: React.FC<Props> = ({ navigation }) => {
     [dispatch, votedOptions],
   );
 
+  const handleDelete = useCallback(
+    (post: Post) => {
+      Alert.alert(
+        'Delete Post',
+        'Are you sure you want to delete this post? This action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              dispatch(deletePost(post.id));
+            },
+          },
+        ],
+      );
+    },
+    [dispatch],
+  );
+
   const renderPost = useCallback(
     ({ item }: { item: Post }) => (
       <PostCard
@@ -122,11 +144,13 @@ export const MyPostsScreen: React.FC<Props> = ({ navigation }) => {
         onLike={() => handleLike(item)}
         onComment={() => handleComment(item)}
         onVote={optionId => handleVote(item, optionId)}
+        onDelete={() => handleDelete(item)}
         isLiked={likedPosts[item.id]}
         votedOptionId={votedOptions[item.id]}
+        showDeleteOption
       />
     ),
-    [handlePostPress, handleLike, handleComment, handleVote, likedPosts, votedOptions],
+    [handlePostPress, handleLike, handleComment, handleVote, handleDelete, likedPosts, votedOptions],
   );
 
   const renderEmpty = () => {

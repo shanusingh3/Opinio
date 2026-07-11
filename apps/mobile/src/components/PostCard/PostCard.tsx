@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Pressable,
+  Share,
 } from 'react-native';
 
 import { colors, spacing, typography } from '@/theme';
@@ -17,9 +18,11 @@ interface PostCardProps {
   onLike?: () => void;
   onComment?: () => void;
   onVote?: (optionId: string) => void;
+  onDelete?: () => void;
   isLiked?: boolean;
   votedOptionId?: string | null;
   showFullContent?: boolean;
+  showDeleteOption?: boolean;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({
@@ -28,9 +31,11 @@ export const PostCard: React.FC<PostCardProps> = ({
   onLike,
   onComment,
   onVote,
+  onDelete,
   isLiked = false,
   votedOptionId = null,
   showFullContent = false,
+  showDeleteOption = false,
 }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -50,6 +55,20 @@ export const PostCard: React.FC<PostCardProps> = ({
   const authorName = post.author.name || post.author.phone;
   const isPoll = post.type === PostType.POLL;
 
+  const handleShare = async () => {
+    try {
+      const postType = isPoll ? 'poll' : 'question';
+      const message = `Check out this ${postType} on Opinio:\n\n"${post.content.slice(0, 100)}${post.content.length > 100 ? '...' : ''}"\n\nDownload Opinio to join the conversation!`;
+      
+      await Share.share({
+        message,
+        title: `Opinio - ${authorName}'s ${postType}`,
+      });
+    } catch (error) {
+      // User cancelled or share failed - silently ignore
+    }
+  };
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -58,75 +77,102 @@ export const PostCard: React.FC<PostCardProps> = ({
       ]}
       onPress={onPress}
     >
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {authorName.charAt(0).toUpperCase()}
-          </Text>
-        </View>
-        <View style={styles.headerInfo}>
-          <Text style={styles.authorName}>{authorName}</Text>
-          <View style={styles.metaRow}>
+      {/* Gradient accent bar */}
+      <View style={styles.accentBar} />
+      
+      <View style={styles.cardContent}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {authorName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.onlineIndicator} />
+          </View>
+          
+          <View style={styles.headerInfo}>
+            <View style={styles.nameRow}>
+              <Text style={styles.authorName}>{authorName}</Text>
+              {isPoll && (
+                <View style={styles.pollBadge}>
+                  <Text style={styles.pollBadgeIcon}>📊</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.timestamp}>{formatDate(post.createdAt)}</Text>
-            {isPoll && (
-              <View style={styles.pollBadge}>
-                <Text style={styles.pollBadgeText}>📊 Poll</Text>
-              </View>
-            )}
           </View>
+          
+          {showDeleteOption && onDelete && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={onDelete}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.deleteIcon}>�️</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      </View>
 
-      <Text
-        style={styles.content}
-        numberOfLines={showFullContent ? undefined : 4}
-      >
-        {post.content}
-      </Text>
-
-      {isPoll && post.poll && (
-        <PollOptions
-          options={post.poll.options}
-          totalVotes={post.poll.totalVotes}
-          votedOptionId={votedOptionId}
-          onVote={onVote}
-          endsAt={post.poll.endsAt}
-        />
-      )}
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.actionButton, isLiked && styles.actionButtonActive]}
-          onPress={onLike}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.actionIconContainer, isLiked && styles.likedIconContainer]}>
-            <Text style={styles.actionIconText}>{isLiked ? '❤️' : '🤍'}</Text>
-          </View>
-          <Text style={[styles.actionText, isLiked && styles.likedText]}>
-            {post.likeCount > 0 ? post.likeCount : 'Like'}
+        {/* Content */}
+        <View style={styles.contentContainer}>
+          <Text
+            style={styles.content}
+            numberOfLines={showFullContent ? undefined : 4}
+          >
+            {post.content}
           </Text>
-        </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={onComment}
-          activeOpacity={0.7}
-        >
-          <View style={styles.actionIconContainer}>
-            <Text style={styles.actionIconText}>💬</Text>
+        {/* Poll */}
+        {isPoll && post.poll && (
+          <View style={styles.pollContainer}>
+            <PollOptions
+              options={post.poll.options}
+              totalVotes={post.poll.totalVotes}
+              votedOptionId={votedOptionId}
+              onVote={onVote}
+              endsAt={post.poll.endsAt}
+            />
           </View>
-          <Text style={styles.actionText}>
-            {post.commentCount > 0 ? post.commentCount : 'Comment'}
-          </Text>
-        </TouchableOpacity>
+        )}
 
-        <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
-          <View style={styles.actionIconContainer}>
-            <Text style={styles.actionIconText}>📤</Text>
-          </View>
-          <Text style={styles.actionText}>Share</Text>
-        </TouchableOpacity>
+        {/* Actions */}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={[styles.actionButton, isLiked && styles.actionButtonActive]}
+            onPress={onLike}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.actionIcon, isLiked && styles.likedIcon]}>
+              {isLiked ? '❤️' : '🤍'}
+            </Text>
+            <Text style={[styles.actionText, isLiked && styles.likedText]}>
+              {post.likeCount > 0 ? post.likeCount : 'Like'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={onComment}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.actionIcon}>💬</Text>
+            <Text style={styles.actionText}>
+              {post.commentCount > 0 ? post.commentCount : 'Comment'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleShare}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.actionIcon}>📤</Text>
+            <Text style={styles.actionText}>Share</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Pressable>
   );
@@ -135,114 +181,139 @@ export const PostCard: React.FC<PostCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.md,
+    borderRadius: 20,
     marginHorizontal: spacing.md,
     marginVertical: spacing.sm,
     shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 5,
+    overflow: 'hidden',
   },
   containerPressed: {
     transform: [{ scale: 0.98 }],
-    opacity: 0.95,
+    shadowOpacity: 0.08,
+  },
+  accentBar: {
+    height: 4,
+    backgroundColor: colors.primary,
+  },
+  cardContent: {
+    padding: spacing.md,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.md,
   },
+  avatarContainer: {
+    position: 'relative',
+  },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
   },
   avatarText: {
     color: colors.white,
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.success,
+    borderWidth: 2,
+    borderColor: colors.surface,
   },
   headerInfo: {
     flex: 1,
     marginLeft: spacing.sm,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   authorName: {
     ...typography.body,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 2,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   timestamp: {
     ...typography.caption,
     color: colors.textTertiary,
   },
   pollBadge: {
-    backgroundColor: colors.primaryLight + '20',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginLeft: spacing.sm,
+    marginLeft: spacing.xs,
   },
-  pollBadgeText: {
-    fontSize: 11,
-    color: colors.primary,
-    fontWeight: '600',
+  pollBadgeIcon: {
+    fontSize: 14,
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.errorLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteIcon: {
+    fontSize: 16,
+  },
+  contentContainer: {
+    marginBottom: spacing.sm,
   },
   content: {
     ...typography.body,
     color: colors.text,
-    lineHeight: 24,
-    marginBottom: spacing.md,
-    letterSpacing: 0.2,
+    lineHeight: 26,
+    fontSize: 16,
+  },
+  pollContainer: {
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
   footer: {
-    flexDirection: 'row',
-    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
+    paddingTop: spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    marginRight: spacing.sm,
-    borderRadius: 20,
-    backgroundColor: colors.background,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: 12,
+    marginHorizontal: spacing.xs,
   },
   actionButtonActive: {
     backgroundColor: colors.errorLight,
   },
-  actionIconContainer: {
+  actionIcon: {
+    fontSize: 18,
     marginRight: spacing.xs,
   },
-  likedIconContainer: {
+  likedIcon: {
     transform: [{ scale: 1.1 }],
   },
-  actionIconText: {
-    fontSize: 16,
-  },
   actionText: {
-    ...typography.caption,
+    ...typography.bodySmall,
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   likedText: {
     color: colors.error,
-    fontWeight: '600',
   },
 });
