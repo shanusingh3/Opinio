@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { HomeScreen } from '@/features/home/screens';
+import { FeedScreen, PostDetailScreen, CreatePostScreen } from '@/features/posts/screens';
 import { Routes } from './routes';
 import { MainStackParamList } from './types';
 
@@ -15,8 +15,19 @@ export const MainNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen
-        name={Routes.Main.Home}
-        component={HomeScreen}
+        name={Routes.Main.Feed}
+        component={FeedScreen}
+      />
+      <Stack.Screen
+        name={Routes.Main.PostDetail}
+        component={PostDetailScreen}
+      />
+      <Stack.Screen
+        name={Routes.Main.CreatePost}
+        component={CreatePostScreen}
+        options={{
+          presentation: 'modal',
+        }}
       />
     </Stack.Navigator>
   );

@@ -5,7 +5,9 @@ export const Routes = {
     OTPVerification: 'OTPVerification',
   },
   Main: {
-    Home: 'Home',
+    Feed: 'Feed',
+    PostDetail: 'PostDetail',
+    CreatePost: 'CreatePost',
     Profile: 'Profile',
   },
 } as const;

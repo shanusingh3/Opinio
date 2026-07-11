@@ -7,7 +7,9 @@ export type AuthStackParamList = {
 };
 
 export type MainStackParamList = {
-  Home: undefined;
+  Feed: undefined;
+  PostDetail: { postId: string };
+  CreatePost: undefined;
   Profile: undefined;
 };
 

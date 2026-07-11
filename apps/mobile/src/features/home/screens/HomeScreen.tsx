@@ -12,7 +12,7 @@ import { colors, spacing, typography } from '@/theme';
 import { MainScreenProps } from '@/navigation/types';
 import { useAuth } from '@/features/auth/context/AuthContext';
 
-type Props = MainScreenProps<'Home'>;
+type Props = MainScreenProps<'Profile'>;
 
 export const HomeScreen: React.FC<Props> = () => {
   const insets = useSafeAreaInsets();

@@ -58,7 +58,7 @@ class NavigationServiceClass {
   }
 
   public resetToMain(): void {
-    this.reset([{ name: Routes.Main.Home }]);
+    this.reset([{ name: Routes.Main.Feed }]);
   }
 
   public push<T extends keyof RootStackParamList>(
