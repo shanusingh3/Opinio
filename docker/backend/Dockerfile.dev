@@ -9,6 +9,7 @@ RUN corepack enable && yarn install
 
 COPY apps/backend/ .
 
+RUN npx prisma generate
 EXPOSE 3000
 
 CMD ["yarn", "start:dev"]
