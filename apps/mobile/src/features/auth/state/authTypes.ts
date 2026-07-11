@@ -10,6 +10,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isHydrated: boolean;
+  error: string | null;
 }
 
 export interface LoginPayload {
