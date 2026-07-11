@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '@/theme';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { MainScreenProps } from '@/navigation/types';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 import { createPost, selectPostsCreating } from '../state';
 import { PostType } from '../api/postsApi';
@@ -26,6 +27,7 @@ type Props = MainScreenProps<'CreatePost'>;
 export const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
+  const { user } = useAuth();
   const isCreating = useAppSelector(selectPostsCreating);
 
   const [postType, setPostType] = useState<PostType>(PostType.QUESTION);
@@ -36,6 +38,15 @@ export const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
   const isValid =
     content.trim().length > 0 &&
     (!isPoll || pollOptions.filter(o => o.trim()).length >= 2);
+  const charCount = content.length;
+  const maxChars = 1000;
+
+  const getInitials = () => {
+    if (user?.phone) {
+      return user.phone.slice(-2);
+    }
+    return '?';
+  };
 
   const handleAddOption = () => {
     if (pollOptions.length < 6) {
@@ -102,20 +113,24 @@ export const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-      <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
+      
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <TouchableOpacity
           onPress={handleBack}
-          style={styles.backButton}
+          style={styles.closeButton}
           activeOpacity={0.7}
         >
-          <Text style={styles.backText}>×</Text>
+          <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Post</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Create Post</Text>
+        </View>
         <TouchableOpacity
           onPress={handleSubmit}
           style={[
-            styles.postButton,
-            (!isValid || isCreating) && styles.postButtonDisabled,
+            styles.publishButton,
+            (!isValid || isCreating) && styles.publishButtonDisabled,
           ]}
           disabled={!isValid || isCreating}
           activeOpacity={0.8}
@@ -123,76 +138,126 @@ export const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
           {isCreating ? (
             <ActivityIndicator size="small" color={colors.white} />
           ) : (
-            <Text style={styles.postButtonText}>Post</Text>
+            <Text style={styles.publishButtonText}>Publish</Text>
           )}
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.typeSelector}>
-          <TouchableOpacity
-            style={[
-              styles.typeButton,
-              postType === PostType.QUESTION && styles.typeButtonActive,
-            ]}
-            onPress={() => setPostType(PostType.QUESTION)}
-          >
-            <Text
+        {/* Post Type Selector */}
+        <View style={styles.typeSelectorCard}>
+          <Text style={styles.sectionLabel}>POST TYPE</Text>
+          <View style={styles.typeSelector}>
+            <TouchableOpacity
               style={[
-                styles.typeButtonText,
-                postType === PostType.QUESTION && styles.typeButtonTextActive,
+                styles.typeOption,
+                postType === PostType.QUESTION && styles.typeOptionActive,
               ]}
+              onPress={() => setPostType(PostType.QUESTION)}
+              activeOpacity={0.7}
             >
-              Question
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.typeButton,
-              postType === PostType.POLL && styles.typeButtonActive,
-            ]}
-            onPress={() => setPostType(PostType.POLL)}
-          >
-            <Text
+              <Text style={styles.typeIcon}>💭</Text>
+              <Text
+                style={[
+                  styles.typeText,
+                  postType === PostType.QUESTION && styles.typeTextActive,
+                ]}
+              >
+                Question
+              </Text>
+              <Text style={styles.typeDescription}>
+                Ask anything
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
               style={[
-                styles.typeButtonText,
-                postType === PostType.POLL && styles.typeButtonTextActive,
+                styles.typeOption,
+                postType === PostType.POLL && styles.typeOptionActive,
               ]}
+              onPress={() => setPostType(PostType.POLL)}
+              activeOpacity={0.7}
             >
-              Poll
-            </Text>
-          </TouchableOpacity>
+              <Text style={styles.typeIcon}>📊</Text>
+              <Text
+                style={[
+                  styles.typeText,
+                  postType === PostType.POLL && styles.typeTextActive,
+                ]}
+              >
+                Poll
+              </Text>
+              <Text style={styles.typeDescription}>
+                Get opinions
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <TextInput
-          style={styles.contentInput}
-          placeholder={
-            isPoll
-              ? "What would you like to ask?"
-              : "What's on your mind?"
-          }
-          placeholderTextColor={colors.textSecondary}
-          value={content}
-          onChangeText={setContent}
-          multiline
-          maxLength={1000}
-          autoFocus
-        />
+        {/* Content Input Card */}
+        <View style={styles.contentCard}>
+          <View style={styles.authorRow}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{getInitials()}</Text>
+            </View>
+            <View style={styles.authorInfo}>
+              <Text style={styles.authorName}>You</Text>
+              <Text style={styles.postingAs}>Posting publicly</Text>
+            </View>
+          </View>
 
+          <TextInput
+            style={styles.contentInput}
+            placeholder={
+              isPoll
+                ? "What would you like to ask your audience?"
+                : "Share your thoughts, ask a question..."
+            }
+            placeholderTextColor={colors.textTertiary}
+            value={content}
+            onChangeText={setContent}
+            multiline
+            maxLength={maxChars}
+            autoFocus
+          />
+
+          <View style={styles.charCountRow}>
+            <Text style={[
+              styles.charCount,
+              charCount > maxChars * 0.9 && styles.charCountWarning,
+            ]}>
+              {charCount}/{maxChars}
+            </Text>
+          </View>
+        </View>
+
+        {/* Poll Options */}
         {isPoll && (
-          <View style={styles.pollSection}>
-            <Text style={styles.pollSectionTitle}>Poll Options</Text>
+          <View style={styles.pollCard}>
+            <View style={styles.pollHeader}>
+              <Text style={styles.sectionLabel}>POLL OPTIONS</Text>
+              <Text style={styles.optionCount}>
+                {pollOptions.filter(o => o.trim()).length} of {pollOptions.length}
+              </Text>
+            </View>
 
             {pollOptions.map((option, index) => (
               <View key={index} style={styles.optionRow}>
+                <View style={styles.optionNumber}>
+                  <Text style={styles.optionNumberText}>{index + 1}</Text>
+                </View>
                 <TextInput
-                  style={styles.optionInput}
+                  style={[
+                    styles.optionInput,
+                    option.trim() && styles.optionInputFilled,
+                  ]}
                   placeholder={`Option ${index + 1}`}
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={colors.textTertiary}
                   value={option}
                   onChangeText={value => handleOptionChange(index, value)}
                   maxLength={100}
@@ -201,8 +266,9 @@ export const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
                   <TouchableOpacity
                     style={styles.removeButton}
                     onPress={() => handleRemoveOption(index)}
+                    activeOpacity={0.7}
                   >
-                    <Text style={styles.removeButtonText}>×</Text>
+                    <Text style={styles.removeButtonText}>✕</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -212,10 +278,21 @@ export const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
               <TouchableOpacity
                 style={styles.addOptionButton}
                 onPress={handleAddOption}
+                activeOpacity={0.7}
               >
-                <Text style={styles.addOptionText}>+ Add Option</Text>
+                <View style={styles.addOptionIcon}>
+                  <Text style={styles.addOptionIconText}>+</Text>
+                </View>
+                <Text style={styles.addOptionText}>Add another option</Text>
               </TouchableOpacity>
             )}
+
+            <View style={styles.pollTip}>
+              <Text style={styles.pollTipIcon}>💡</Text>
+              <Text style={styles.pollTipText}>
+                Add 2-6 options. Keep them short and clear.
+              </Text>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -233,7 +310,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
     backgroundColor: colors.surface,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
@@ -241,58 +318,112 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backText: {
-    fontSize: 28,
+  closeText: {
+    fontSize: 18,
     color: colors.textSecondary,
-    marginTop: -2,
+    fontWeight: '600',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
     ...typography.h3,
     color: colors.text,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  postButton: {
+  publishButton: {
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: 20,
-    minWidth: 70,
-    alignItems: 'center',
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  postButtonDisabled: {
+  publishButtonDisabled: {
     backgroundColor: colors.border,
     shadowOpacity: 0,
     elevation: 0,
   },
-  postButtonText: {
+  publishButtonText: {
     ...typography.body,
     color: colors.white,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  content: {
+  scrollView: {
     flex: 1,
   },
-  contentContainer: {
+  scrollContent: {
     padding: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
+  sectionLabel: {
+    ...typography.caption,
+    color: colors.textTertiary,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
+  },
+  typeSelectorCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   typeSelector: {
     flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  typeOption: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    padding: spacing.md,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  typeOptionActive: {
+    backgroundColor: colors.primaryLight + '15',
+    borderColor: colors.primary,
+  },
+  typeIcon: {
+    fontSize: 28,
+    marginBottom: spacing.xs,
+  },
+  typeText: {
+    ...typography.body,
+    color: colors.text,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  typeTextActive: {
+    color: colors.primary,
+  },
+  typeDescription: {
+    ...typography.caption,
+    color: colors.textTertiary,
+  },
+  contentCard: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.xs,
+    borderRadius: 20,
+    padding: spacing.md,
     marginBottom: spacing.md,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
@@ -300,48 +431,65 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  typeButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    borderRadius: 10,
+  authorRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
   },
-  typeButtonActive: {
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
   },
-  typeButtonText: {
+  avatarText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  authorInfo: {
+    flex: 1,
+  },
+  authorName: {
     ...typography.body,
-    color: colors.textSecondary,
+    color: colors.text,
     fontWeight: '600',
   },
-  typeButtonTextActive: {
-    color: colors.white,
+  postingAs: {
+    ...typography.caption,
+    color: colors.textTertiary,
   },
   contentInput: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.md,
-    minHeight: 140,
+    minHeight: 120,
     ...typography.body,
     color: colors.text,
     textAlignVertical: 'top',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    fontSize: 17,
+    lineHeight: 24,
   },
-  pollSection: {
-    marginTop: spacing.lg,
+  charCountRow: {
+    alignItems: 'flex-end',
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  charCount: {
+    ...typography.caption,
+    color: colors.textTertiary,
+  },
+  charCountWarning: {
+    color: colors.warning,
+  },
+  pollCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: spacing.md,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
@@ -349,18 +497,35 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  pollSectionTitle: {
-    ...typography.bodySmall,
-    fontWeight: '600',
-    color: colors.textSecondary,
+  pollHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  },
+  optionCount: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '600',
   },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
+  },
+  optionNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primaryLight + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  optionNumberText: {
+    ...typography.bodySmall,
+    color: colors.primary,
+    fontWeight: '700',
   },
   optionInput: {
     flex: 1,
@@ -370,36 +535,73 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     ...typography.body,
     color: colors.text,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.borderLight,
   },
+  optionInputFilled: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight + '08',
+  },
   removeButton: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: spacing.sm,
     backgroundColor: colors.errorLight,
-    borderRadius: 18,
+    borderRadius: 16,
   },
   removeButtonText: {
-    fontSize: 20,
+    fontSize: 14,
     color: colors.error,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   addOptionButton: {
-    paddingVertical: spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
     backgroundColor: colors.background,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.borderLight,
     borderStyle: 'dashed',
     marginTop: spacing.xs,
+  },
+  addOptionIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  addOptionIconText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '600',
   },
   addOptionText: {
     ...typography.body,
     color: colors.primary,
     fontWeight: '600',
+  },
+  pollTip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  pollTipIcon: {
+    fontSize: 16,
+    marginRight: spacing.sm,
+  },
+  pollTipText: {
+    ...typography.caption,
+    color: colors.textTertiary,
+    flex: 1,
   },
 });

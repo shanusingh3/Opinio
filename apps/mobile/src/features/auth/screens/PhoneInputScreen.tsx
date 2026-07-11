@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  TouchableOpacity,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
@@ -16,6 +13,8 @@ import { colors, spacing, typography } from '@/theme';
 import { AuthScreenProps } from '@/navigation/types';
 import { Routes } from '@/navigation/routes';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { Button, Text } from '@/components/atoms';
+import { PhoneInput, Header } from '@/components/molecules';
 
 type Props = AuthScreenProps<'PhoneInput'>;
 
@@ -33,18 +32,12 @@ export const PhoneInputScreen: React.FC<Props> = ({ navigation }) => {
   }, [error, clearAuthError]);
 
   const handleSendOTP = async () => {
-    if (!isValidPhone) {
-      return;
-    }
+    if (!isValidPhone) return;
 
     const success = await sendOtp(phone);
     if (success) {
       navigation.navigate(Routes.Auth.OTPVerification, { phone });
     }
-  };
-
-  const handleBack = () => {
-    navigation.goBack();
   };
 
   return (
@@ -54,49 +47,38 @@ export const PhoneInputScreen: React.FC<Props> = ({ navigation }) => {
     >
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>{'←'}</Text>
-        </TouchableOpacity>
-      </View>
+      <Header
+        title=""
+        leftIcon="←"
+        onLeftPress={() => navigation.goBack()}
+        transparent
+      />
 
       <View style={styles.content}>
-        <Text style={styles.title}>Enter your phone number</Text>
-        <Text style={styles.subtitle}>
+        <Text variant="h2" style={styles.title}>
+          Enter your phone number
+        </Text>
+        <Text variant="body" color="secondary" style={styles.subtitle}>
           We'll send you a verification code to confirm your identity
         </Text>
 
-        <View style={styles.inputContainer}>
-          <View style={styles.countryCode}>
-            <Text style={styles.countryCodeText}>+91</Text>
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Phone number"
-            placeholderTextColor={colors.textSecondary}
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
-            maxLength={10}
-            autoFocus
-          />
-        </View>
+        <PhoneInput
+          value={phone}
+          onChangeText={setPhone}
+          countryCode="+91"
+          autoFocus
+        />
       </View>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-        <TouchableOpacity
-          style={[
-            styles.primaryButton,
-            !isValidPhone && styles.primaryButtonDisabled,
-          ]}
+        <Button
+          title={isLoading ? 'Sending...' : 'Continue'}
           onPress={handleSendOTP}
-          activeOpacity={0.8}
-          disabled={!isValidPhone || isLoading}
-        >
-          <Text style={styles.primaryButtonText}>
-            {isLoading ? 'Sending...' : 'Continue'}
-          </Text>
-        </TouchableOpacity>
+          disabled={!isValidPhone}
+          loading={isLoading}
+          fullWidth
+          size="lg"
+        />
       </View>
     </KeyboardAvoidingView>
   );
