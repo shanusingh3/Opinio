@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../../repositories/user.repository';
+import { User } from 'generated/prisma';
 
 @Injectable()
 export class UsersService {
@@ -7,6 +8,10 @@ export class UsersService {
 
     async findByPhone(phone: string) {
         return this.userRepository.findByPhone(phone);
+    }
+
+    async findById(id: string): Promise<User | null> {
+        return this.userRepository.findById(id);
     }
 
     async findOrCreate(phone: string) {
