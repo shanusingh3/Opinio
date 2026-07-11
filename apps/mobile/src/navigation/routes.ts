@@ -9,5 +9,7 @@ export const Routes = {
     PostDetail: 'PostDetail',
     CreatePost: 'CreatePost',
     Profile: 'Profile',
+    MyPosts: 'MyPosts',
+    EditProfile: 'EditProfile',
   },
 } as const;

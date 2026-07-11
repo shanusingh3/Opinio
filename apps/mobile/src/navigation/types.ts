@@ -11,6 +11,8 @@ export type MainStackParamList = {
   PostDetail: { postId: string };
   CreatePost: undefined;
   Profile: undefined;
+  MyPosts: undefined;
+  EditProfile: undefined;
 };
 
 export type AuthScreenProps<T extends keyof AuthStackParamList> =

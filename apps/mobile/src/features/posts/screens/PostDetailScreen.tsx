@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -157,8 +158,13 @@ export const PostDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+      <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
+        <TouchableOpacity
+          onPress={handleBack}
+          style={styles.backButton}
+          activeOpacity={0.7}
+        >
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Post</Text>
@@ -190,12 +196,7 @@ export const PostDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text style={styles.noComments}>No comments yet</Text>
           ) : (
             comments.map(comment => (
-              <CommentCard
-                key={comment.id}
-                comment={comment}
-                onLike={() => {}}
-                onReply={() => {}}
-              />
+              <CommentCard key={comment.id} comment={comment} />
             ))
           )}
         </View>
@@ -246,22 +247,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   backButton: {
-    padding: spacing.xs,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backText: {
-    fontSize: 24,
+    fontSize: 22,
     color: colors.text,
   },
   headerTitle: {
     ...typography.h3,
     color: colors.text,
+    fontWeight: '600',
   },
   placeholder: {
-    width: 32,
+    width: 40,
   },
   content: {
     flex: 1,
@@ -270,20 +280,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     marginTop: spacing.sm,
     padding: spacing.md,
+    borderRadius: 16,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   commentsTitle: {
     ...typography.h3,
     color: colors.text,
     marginBottom: spacing.md,
+    fontWeight: '600',
   },
   commentsLoader: {
     paddingVertical: spacing.lg,
   },
   noComments: {
     ...typography.body,
-    color: colors.textSecondary,
+    color: colors.textTertiary,
     textAlign: 'center',
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.xl,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -291,32 +310,46 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.borderLight,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 4,
   },
   input: {
     flex: 1,
     backgroundColor: colors.background,
-    borderRadius: 20,
+    borderRadius: 24,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     maxHeight: 100,
     ...typography.body,
     color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: spacing.sm,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sendButtonDisabled: {
     backgroundColor: colors.border,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   sendButtonText: {
-    color: colors.surface,
+    color: colors.white,
     fontSize: 20,
   },
   errorText: {

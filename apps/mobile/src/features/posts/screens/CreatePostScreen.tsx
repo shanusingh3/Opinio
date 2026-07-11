@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -99,24 +101,30 @@ export const CreatePostScreen: React.FC<Props> = ({ navigation }) => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
-          <Text style={styles.cancelText}>Cancel</Text>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+      <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
+        <TouchableOpacity
+          onPress={handleBack}
+          style={styles.backButton}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backText}>×</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Post</Text>
         <TouchableOpacity
           onPress={handleSubmit}
-          style={styles.headerButton}
+          style={[
+            styles.postButton,
+            (!isValid || isCreating) && styles.postButtonDisabled,
+          ]}
           disabled={!isValid || isCreating}
+          activeOpacity={0.8}
         >
-          <Text
-            style={[
-              styles.postText,
-              (!isValid || isCreating) && styles.postTextDisabled,
-            ]}
-          >
-            {isCreating ? 'Posting...' : 'Post'}
-          </Text>
+          {isCreating ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Text style={styles.postButtonText}>Post</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -227,29 +235,52 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  headerButton: {
-    padding: spacing.xs,
-    minWidth: 60,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backText: {
+    fontSize: 28,
+    color: colors.textSecondary,
+    marginTop: -2,
   },
   headerTitle: {
     ...typography.h3,
     color: colors.text,
-  },
-  cancelText: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  postText: {
-    ...typography.body,
-    color: colors.primary,
     fontWeight: '600',
-    textAlign: 'right',
   },
-  postTextDisabled: {
-    color: colors.border,
+  postButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+    minWidth: 70,
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  postButtonDisabled: {
+    backgroundColor: colors.border,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  postButtonText: {
+    ...typography.body,
+    color: colors.white,
+    fontWeight: '600',
   },
   content: {
     flex: 1,
@@ -260,77 +291,115 @@ const styles = StyleSheet.create({
   typeSelector: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
-    borderRadius: 8,
+    borderRadius: 12,
     padding: spacing.xs,
     marginBottom: spacing.md,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   typeButton: {
     flex: 1,
     paddingVertical: spacing.sm,
     alignItems: 'center',
-    borderRadius: 6,
+    borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   typeButtonActive: {
     backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   typeButtonText: {
     ...typography.body,
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   typeButtonTextActive: {
-    color: colors.surface,
+    color: colors.white,
   },
   contentInput: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: spacing.md,
-    minHeight: 120,
+    minHeight: 140,
     ...typography.body,
     color: colors.text,
     textAlignVertical: 'top',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   pollSection: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.md,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   pollSectionTitle: {
-    ...typography.body,
+    ...typography.bodySmall,
     fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   optionInput: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
+    backgroundColor: colors.background,
+    borderRadius: 12,
     padding: spacing.sm,
     paddingHorizontal: spacing.md,
     ...typography.body,
     color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   removeButton: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: spacing.xs,
+    marginLeft: spacing.sm,
+    backgroundColor: colors.errorLight,
+    borderRadius: 18,
   },
   removeButtonText: {
-    fontSize: 24,
+    fontSize: 20,
     color: colors.error,
+    fontWeight: '500',
   },
   addOptionButton: {
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderStyle: 'dashed',
+    marginTop: spacing.xs,
   },
   addOptionText: {
     ...typography.body,
     color: colors.primary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

@@ -9,7 +9,7 @@ import { SecureStorage } from '@/services/storage/secureStorage';
 import { NavigationService } from '@/services/navigation/navigationService';
 
 const BASE_URL = __DEV__
-  ? 'http://localhost:3000/api/v1'
+  ? 'https://label-belief-privilege-approval.trycloudflare.com/api/v1'
   : 'https://api.opinio.app/api/v1';
 
 const REQUEST_TIMEOUT = 30000;

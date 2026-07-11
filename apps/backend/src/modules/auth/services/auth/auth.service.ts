@@ -9,7 +9,7 @@ import { RedisService } from '../../../../infrastructure/redis/redis.service';
 import { UsersService } from '../../../users/services/users/users.service';
 import { randomInt } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
-import { User } from 'generated/prisma/client';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {

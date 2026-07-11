@@ -1,63 +1,54 @@
 import React, { useEffect, useCallback } from 'react';
 import {
   View,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
   Text,
+  StyleSheet,
+  FlatList,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, spacing, typography } from '@/theme';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { PostCard } from '@/components';
 import { MainScreenProps } from '@/navigation/types';
-import { Routes } from '@/navigation/routes';
-import { likesService } from '@/features/likes/services/likesServiceRest';
-import { votesService } from '@/features/votes/services/votesServiceRest';
-
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { useAppDispatch, useAppSelector } from '@/store';
 import {
-  fetchFeed,
-  selectFeed,
+  fetchUserPosts,
+  selectUserPosts,
   selectPostsLoading,
-  selectPostsRefreshing,
-  selectHasMore,
   selectLikedPosts,
   selectVotedOptions,
   updatePostLikeCount,
   updatePollVote,
-} from '../state';
-import { Post } from '../api/postsApi';
+} from '@/features/posts/state';
+import { PostCard } from '@/components';
+import { Post } from '@/features/posts/api/postsApi';
+import { Routes } from '@/navigation/routes';
+import { likesService } from '@/features/likes/services/likesServiceRest';
+import { votesService } from '@/features/votes/services/votesServiceRest';
 
-type Props = MainScreenProps<'Feed'>;
+type Props = MainScreenProps<'MyPosts'>;
 
-export const FeedScreen: React.FC<Props> = ({ navigation }) => {
+export const MyPostsScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
-
-  const feed = useAppSelector(selectFeed);
+  const { user } = useAuth();
+  const userPosts = useAppSelector(selectUserPosts);
   const isLoading = useAppSelector(selectPostsLoading);
-  const isRefreshing = useAppSelector(selectPostsRefreshing);
-  const hasMore = useAppSelector(selectHasMore);
   const likedPosts = useAppSelector(selectLikedPosts);
   const votedOptions = useAppSelector(selectVotedOptions);
 
   useEffect(() => {
-    dispatch(fetchFeed({ skip: 0, take: 20, isRefresh: true }));
-  }, [dispatch]);
-
-  const handleRefresh = useCallback(() => {
-    dispatch(fetchFeed({ skip: 0, take: 20, isRefresh: true }));
-  }, [dispatch]);
-
-  const handleLoadMore = useCallback(() => {
-    if (!isLoading && !isRefreshing && hasMore) {
-      dispatch(fetchFeed({ skip: feed.length, take: 20 }));
+    if (user?.id) {
+      dispatch(fetchUserPosts({ userId: user.id }));
     }
-  }, [dispatch, feed.length, hasMore, isLoading, isRefreshing]);
+  }, [dispatch, user?.id]);
+
+  const handleBack = () => {
+    navigation.goBack();
+  };
 
   const handlePostPress = useCallback(
     (post: Post) => {
@@ -123,14 +114,6 @@ export const FeedScreen: React.FC<Props> = ({ navigation }) => {
     [dispatch, votedOptions],
   );
 
-  const handleCreatePost = useCallback(() => {
-    navigation.navigate(Routes.Main.CreatePost);
-  }, [navigation]);
-
-  const handleProfile = useCallback(() => {
-    navigation.navigate(Routes.Main.Profile);
-  }, [navigation]);
-
   const renderPost = useCallback(
     ({ item }: { item: Post }) => (
       <PostCard
@@ -146,23 +129,22 @@ export const FeedScreen: React.FC<Props> = ({ navigation }) => {
     [handlePostPress, handleLike, handleComment, handleVote, likedPosts, votedOptions],
   );
 
-  const renderFooter = () => {
-    if (!isLoading || isRefreshing) return null;
-    return (
-      <View style={styles.footer}>
-        <ActivityIndicator size="small" color={colors.primary} />
-      </View>
-    );
-  };
-
   const renderEmpty = () => {
     if (isLoading) return null;
     return (
       <View style={styles.emptyContainer}>
+        <Text style={styles.emptyIcon}>📝</Text>
         <Text style={styles.emptyText}>No posts yet</Text>
         <Text style={styles.emptySubtext}>
-          Be the first to share something!
+          Your posts will appear here
         </Text>
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => navigation.navigate(Routes.Main.CreatePost)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.createButtonText}>Create your first post</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -170,45 +152,32 @@ export const FeedScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.xs }]}>
         <TouchableOpacity
-          style={styles.profileButton}
-          onPress={handleProfile}
+          onPress={handleBack}
+          style={styles.backButton}
           activeOpacity={0.7}
         >
-          <Text style={styles.profileButtonText}>👤</Text>
+          <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Opinio</Text>
-          <Text style={styles.subtitle}>Share your thoughts</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={handleCreatePost}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.createButtonText}>+</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Posts</Text>
+        <View style={styles.placeholder} />
       </View>
 
-      <FlatList
-        data={feed}
-        renderItem={renderPost}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
-        }
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={renderFooter}
-        ListEmptyComponent={renderEmpty}
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoading && userPosts.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={userPosts}
+          renderItem={renderPost}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={renderEmpty}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 };
@@ -220,10 +189,10 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
@@ -231,65 +200,45 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  titleContainer: {
-    alignItems: 'center',
-  },
-  title: {
-    ...typography.h2,
-    color: colors.primary,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    marginTop: 2,
-  },
-  profileButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.borderLight,
   },
-  profileButtonText: {
-    fontSize: 20,
+  backText: {
+    fontSize: 22,
+    color: colors.text,
   },
-  createButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: colors.primary,
+  headerTitle: {
+    ...typography.h3,
+    color: colors.text,
+    fontWeight: '600',
+  },
+  placeholder: {
+    width: 40,
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  createButtonText: {
-    color: colors.white,
-    fontSize: 26,
-    fontWeight: '400',
-    marginTop: -2,
   },
   listContent: {
     paddingTop: spacing.sm,
     paddingBottom: spacing.xl,
-  },
-  footer: {
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
+    flexGrow: 1,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 120,
+    paddingHorizontal: spacing.xl,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: spacing.md,
   },
   emptyText: {
     ...typography.h3,
@@ -299,5 +248,22 @@ const styles = StyleSheet.create({
   emptySubtext: {
     ...typography.body,
     color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  createButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: 24,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  createButtonText: {
+    ...typography.button,
+    color: colors.white,
   },
 });

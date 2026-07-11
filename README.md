@@ -197,6 +197,44 @@ Completed
 * JwtStrategy
 * JwtAuthGuard
 * Protected Routes
+* Posts Module (CRUD, Feed)
+* Polls Module (Create, Vote, Change Vote)
+* Comments Module (CRUD, Replies)
+* Likes Module (Posts, Comments, Toggle)
+* Swagger Documentation (`/docs`)
+
+## API Endpoints
+
+### Auth
+* `POST /api/v1/auth/send-otp` - Send OTP
+* `POST /api/v1/auth/verify-otp` - Verify OTP
+
+### Posts
+* `POST /api/v1/posts` - Create post/poll 🔒
+* `GET /api/v1/posts/feed` - Get feed
+* `GET /api/v1/posts/:id` - Get post
+* `GET /api/v1/posts/user/:userId` - Get user posts
+* `PUT /api/v1/posts/:id` - Update post 🔒
+* `DELETE /api/v1/posts/:id` - Delete post 🔒
+
+### Comments
+* `POST /api/v1/comments` - Create comment 🔒
+* `GET /api/v1/comments/post/:postId` - Get comments
+* `GET /api/v1/comments/:id/replies` - Get replies
+* `PUT /api/v1/comments/:id` - Update 🔒
+* `DELETE /api/v1/comments/:id` - Delete 🔒
+
+### Likes
+* `POST /api/v1/likes/toggle` - Toggle like 🔒
+* `POST /api/v1/likes/post/:postId` - Like post 🔒
+* `DELETE /api/v1/likes/post/:postId` - Unlike 🔒
+
+### Votes
+* `POST /api/v1/votes` - Vote 🔒
+* `POST /api/v1/votes/change` - Change vote 🔒
+* `DELETE /api/v1/votes/:pollOptionId` - Unvote 🔒
+
+🔒 = Requires JWT Bearer token
 
 ---
 
@@ -242,34 +280,48 @@ Avoid building large amounts of backend before integrating with the frontend.
 
 # Mobile Architecture
 
-Feature-first structure:
+Feature-first structure with layered architecture:
 
 ```
 src/
-
-features/
-    auth/
-    posts/
-    polls/
-
-navigation/
-
-components/
-
-services/
-    api/
-    storage/
-
-store/
-
-hooks/
-
-theme/
-
-utils/
-
-types/
+├── features/
+│   ├── auth/
+│   │   ├── api/           # DTOs
+│   │   ├── services/      # IService interface + REST impl
+│   │   ├── data/          # IDataSource interface + impl
+│   │   ├── repository/    # Business logic
+│   │   ├── state/         # Redux Duck (types, slice, thunks)
+│   │   ├── context/       # Session orchestration
+│   │   └── screens/       # UI
+│   ├── posts/
+│   ├── comments/
+│   ├── likes/
+│   └── votes/
+├── navigation/
+├── components/            # Shared UI (PostCard, PollOptions, etc.)
+├── services/
+│   ├── api/               # Axios singleton
+│   ├── storage/           # Keychain + MMKV
+│   └── navigation/        # Navigation singleton
+├── store/                 # Redux store
+└── theme/
 ```
+
+## Mobile Screens
+
+* **FeedScreen** - Main feed with posts/polls
+* **PostDetailScreen** - Post with comments
+* **CreatePostScreen** - Create question or poll
+* **WelcomeScreen** - Auth landing
+* **PhoneInputScreen** - Phone number entry
+* **OTPVerificationScreen** - OTP verification
+
+## Design Patterns
+
+* **Singleton** - ApiClient, NavigationService, Repositories
+* **Adapter** - IService, IDataSource interfaces (swap REST/GraphQL)
+* **Repository** - Business logic abstraction
+* **Redux Duck** - Types + Slice + Thunks + Selectors
 
 Business logic belongs inside features.
 
@@ -279,19 +331,18 @@ Reusable UI belongs in components.
 
 # Upcoming Features
 
-Authentication
+Authentication ✅
 
-* Complete
+* OTP Login
+* JWT Authentication
+* Secure Token Storage (Keychain)
 
-Core Product
+Core Product ✅
 
-* Posts
-* Questions
-* Polls
-* Poll Options
-* Voting
-* Likes
-* Comments
+* Posts (Questions & Polls)
+* Poll Options & Voting
+* Likes (Posts & Comments)
+* Comments & Replies
 * Feed
 
 Future
